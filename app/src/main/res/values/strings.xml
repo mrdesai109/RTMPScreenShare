@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">ZebraAssistRTMP</string>
+    <string name="stop">Stop Streaming</string>
+    <string name="start">Start Streaming</string>
+</resources>
