@@ -1,19 +1,14 @@
 package com.android.zebraassistrtmp.ui
 
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.media.projection.MediaProjectionManager
-import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.android.zebraassistrtmp.R
@@ -54,9 +49,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun init() {
-        val intentFilter = IntentFilter("STOP_STREAM")
-        val receiverFlags = ContextCompat.RECEIVER_NOT_EXPORTED
-        ContextCompat.registerReceiver(this, broadcastReceiver, intentFilter, receiverFlags)
+        window.statusBarColor = ContextCompat.getColor(this, R.color.black)
         println(mainViewModel.toString())
         if (!Utils.checkPermissions(this)) {
             Utils.requestPermissions(this)
@@ -116,14 +109,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val broadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == "STOP_STREAM") {
-                mainViewModel.stopStream()
-            }
-        }
-    }
-
     //screen capture
     private val requestScreenCapture =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -133,9 +118,10 @@ class MainActivity : AppCompatActivity() {
             }
             val data = result.data ?: return@registerForActivityResult
             lifecycleScope.launch {
-                delay(750)
+                delay(500)
                 //val lMediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data)
                 startForegroundService()
+                delay(500)
                 mainViewModel.start(rtmpET.text.toString(), result)
             }
         }

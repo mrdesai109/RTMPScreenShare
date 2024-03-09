@@ -100,7 +100,10 @@ class RtmpService : Service() {
             displayBase = RtspDisplay(baseContext, true, myConnectChecker)
             displayBase?.setIntentResult(resultCode, data)
         }
-        displayBase?.glInterface?.setForceRender(true)
+        displayBase?.glInterface?.apply {
+            start()
+            setForceRender(true)
+        }
     }
 
     fun startStreamRtp() {
@@ -108,12 +111,26 @@ class RtmpService : Service() {
             handleStartService()
         }
         if (displayBase?.isStreaming != true) {
-            if (displayBase?.prepareVideo() == true && displayBase?.prepareAudio() == true) {
-                displayBase?.startStream(url)
+            if (displayBase?.prepareVideo(840,472,1200 * 1024) == true && displayBase?.prepareAudio() == true) {
+                try{
+                    println("Rushi : CacheSizeCheck : ${displayBase?.streamClient?.getCacheSize()}")
+                    println("Rushi : CacheItemsCheck : ${displayBase?.streamClient?.getItemsInCache()}")
+                    displayBase?.streamClient?.apply {
+                        resetDroppedAudioFrames()
+                        resetDroppedVideoFrames()
+                        resetSentAudioFrames()
+                        resetSentVideoFrames()
+                        clearCache()
+                    }
+                    displayBase?.startStream(url)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        streamingState.emit(true)
+                    }
+                }catch (ex : Exception){
+                    showToast("Error - $ex")
+                    handleStopService()
+                }
             }
-        }
-        CoroutineScope(Dispatchers.IO).launch {
-            streamingState.emit(true)
         }
     }
 
@@ -148,8 +165,17 @@ class RtmpService : Service() {
     }
 
     fun handleStopService() {
+        displayBase?.stopStream()
         isServiceRunning = false
         displayBase?.stopStream()
+        displayBase?.glInterface?.stop()
+        displayBase?.streamClient?.apply {
+            resetDroppedAudioFrames()
+            resetDroppedVideoFrames()
+            resetSentAudioFrames()
+            resetSentVideoFrames()
+            clearCache()
+        }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
         CoroutineScope(Dispatchers.IO).launch {
@@ -211,5 +237,4 @@ class RtmpService : Service() {
             )
         }
     }
-
 }
